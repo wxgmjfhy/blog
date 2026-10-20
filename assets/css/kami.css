@@ -788,6 +788,24 @@ main.col {
   margin: 0;
 }
 
+/* 避免 KaTeX 就绪前闪现原始 LaTeX：先隐藏，渲染完成后由 JS 揭示；
+   若 JS 或网络失败，2s 后 CSS 动画兜底自动显示。 */
+.math-display {
+  opacity: 0;
+  animation: math-reveal 0s linear 2s forwards;
+}
+
+html.math-ready .math-display {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes math-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
 .katex {
   font-size: 1.04em;
 }

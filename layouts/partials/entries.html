@@ -1,0 +1,16 @@
+{{ $pages := . }}
+<ol class="entries">
+  {{- range $pages }}
+  <li class="entry">
+    <div class="entry-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time></div>
+    <h2 class="entry-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+    {{- with .Description }}
+    <p class="entry-summary">{{ . }}</p>
+    {{- else }}
+    {{- with .Summary }}
+    <p class="entry-summary">{{ . | plainify | replaceRE `\$\$[\s\S]*?\$\$` " " | replaceRE `\$[^$]*\$` " " | replaceRE `\s+` " " | strings.TrimSpace | truncate 120 "…" }}</p>
+    {{- end }}
+    {{- end }}
+  </li>
+  {{- end }}
+</ol>

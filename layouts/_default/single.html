@@ -1,0 +1,38 @@
+{{ define "main" }}
+<article class="post">
+  <header class="post-head">
+    <h1 class="post-title">{{ .Title }}</h1>
+    <div class="post-meta">
+      <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">{{ .Date.Format "2006-01-02" }}</time>
+      <span aria-hidden="true">·</span>
+      <span>{{ .WordCount }} 字</span>
+      <span aria-hidden="true">·</span>
+      <span>约 {{ .ReadingTime }} 分钟</span>
+      {{- with .Params.tags }}
+      <span aria-hidden="true">·</span>
+      <span class="post-tags">{{ delimit . " / " }}</span>
+      {{- end }}
+    </div>
+  </header>
+
+  {{ if gt (len .Fragments.HeadingsMap) 0 }}
+  <details class="toc">
+    <summary>目录</summary>
+    {{ .TableOfContents }}
+  </details>
+  {{ end }}
+
+  <div class="prose">
+    {{ .Content }}
+  </div>
+
+  <nav class="post-nav" aria-label="文章导航">
+    {{ with .PrevInSection }}
+    <a class="post-nav-link" href="{{ .RelPermalink }}"><span>上一篇</span>{{ .Title }}</a>
+    {{ end }}
+    {{ with .NextInSection }}
+    <a class="post-nav-link" href="{{ .RelPermalink }}"><span>下一篇</span>{{ .Title }}</a>
+    {{ end }}
+  </nav>
+</article>
+{{ end }}

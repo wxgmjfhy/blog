@@ -1,0 +1,7 @@
+{{ define "main" }}
+<header class="list-head">
+  <h1 class="list-title">{{ .Title }}</h1>
+  {{ with .Content }}<div class="list-desc">{{ . }}</div>{{ end }}
+</header>
+{{ partial "entries.html" .Pages }}
+{{ end }}

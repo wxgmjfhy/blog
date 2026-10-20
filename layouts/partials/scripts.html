@@ -1,0 +1,39 @@
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.querySelector(".theme-toggle");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        if (next === "dark") root.setAttribute("data-theme", "dark");
+        else root.removeAttribute("data-theme");
+        try { localStorage.setItem("theme", next); } catch (e) {}
+      });
+    }
+  })();
+
+  document.querySelectorAll(".prose table").forEach(function (t) {
+    var w = document.createElement("div");
+    w.className = "table-scroll";
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+</script>
+<script defer src="{{ "/katex/katex.min.js" | relURL }}"></script>
+<script defer src="{{ "/katex/auto-render.min.js" | relURL }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof renderMathInElement !== "function") return;
+    renderMathInElement(document.querySelector(".prose") || document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false }
+      ],
+      ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"],
+      throwOnError: false,
+      strict: false
+    });
+  });
+</script>

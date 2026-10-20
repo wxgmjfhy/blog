@@ -1,0 +1,49 @@
+baseURL: "https://wxgmjfhy-blog.pages.dev/"
+title: wxgmjfhy
+languageCode: zh-CN
+defaultContentLanguage: zh
+hasCJKLanguage: true
+enableEmoji: true
+enableRobotsTXT: true
+summaryLength: 80
+
+pagination:
+  pagerSize: 20
+
+permalinks:
+  posts: /posts/:contentbasename/
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          inline:
+            - ['$', '$']
+            - ['\(', '\)']
+          block:
+            - ['$$', '$$']
+            - ['\[', '\]']
+  highlight:
+    noClasses: false
+    codeFences: true
+  tableOfContents:
+    startLevel: 2
+    endLevel: 3
+
+params:
+  description: "记录学习、踩坑与思考"
+  author: wxgmjfhy
+  github: "https://github.com/wxgmjfhy"
+
+menu:
+  main:
+    - name: 文章
+      url: /posts/
+      weight: 10
+    - name: 关于
+      url: /about/
+      weight: 20

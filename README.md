@@ -71,22 +71,41 @@ Hugo 的 block passthrough 只对**单行** `$$...$$` 生效。多行公式里�
 
 ## 部署
 
-Cloudflare Pages，构建命令 `make build`，输出目录 `public`。
+推送到 `main` 即自动部署：`.github/workflows/deploy.yml` 会跑 `mathprep` → `hugo` →
+`wrangler pages deploy`，推到 Cloudflare Pages。
 
-首次配置时需要设置环境变量：
+- 线上：<https://wxgmjfhy-blog.pages.dev/>
+- 项目名：`wxgmjfhy-blog`
+- Secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
 
-```
-HUGO_VERSION = 0.147.0
-```
-
-本地用 `wrangler` 直接部署：
+本地手动部署（一般不需要）：
 
 ```bash
 make build
-npx wrangler pages deploy public --project-name=wxgmjfhy-blog
+npx wrangler pages deploy public --project-name=wxgmjfhy-blog --branch=main
 ```
 
-## 设计来源
+本地凭据放在 `~/.cf-token` 与 `~/.cf-account`，用环境变量接入：
 
-排版仿 [Kami](https://github.com/tw93/Kami)：暖白纸面（`#f5f4ed`）、墨蓝单色强调
-（`#1B365D`）、衬线字体主导的层级、极细的分隔线，不用阴影和渐变。
+```bash
+export CLOUDFLARE_API_TOKEN="$(cat ~/.cf-token)"
+export CLOUDFLARE_ACCOUNT_ID="$(cat ~/.cf-account)"
+```
+
+## 设计
+
+参考 [tw93.fun](https://tw93.fun/)（Kami 作者的博客）的网页化表达，色板取自 kami
+`references/tokens.json`：
+
+- 纸面 `#f5f4ed`、墨蓝单色强调 `#1B365D`，不做多色调
+- 楷体主导：`TsangerJinKai02 → STKaiti → Kaiti SC → KaiTi → 楷体 → Songti SC`
+- 正文 18px / 行高 1.9 / 字距 0.3px；正文栏 760px，≥1000px 时放宽到 900px
+- 表格只用发丝线，无竖线、无斑马纹
+- 代码块深色底 + 圆点标题栏 + 复制按钮
+- 支持深浅色切换（默认浅色，跟随手动选择，存 localStorage）
+
+字体说明：tw93 原版用商业字体 TsangerJinKai02，不能随站分发，因此退回系统楷体。
+macOS 上是 STKaiti、Windows 上是 KaiTi、Linux/Android 会退到宋体或黑体。
+若想让各平台完全一致，需要自托管开源楷体（如 LXGW 霞鹜文楷）并按 unicode-range
+切片——注意 npm 上的 `lxgw-wenkai-*-webfont` 包实测存在子集与 CSS 声明不匹配的问题，
+届时建议改用其它分发渠道再验证。

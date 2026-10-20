@@ -1,6 +1,9 @@
 <header class="masthead">
   <div class="col masthead-inner">
-    <a class="wordmark" href="{{ "/" | relURL }}">{{ site.Title }}</a>
+    <a class="wordmark" href="{{ "/" | relURL }}">
+      <span class="mark" aria-hidden="true">{{ substr site.Title 0 1 | upper }}</span>
+      <span>{{ site.Title }}</span>
+    </a>
     <nav class="nav" aria-label="主导航">
       {{- range site.Menus.main }}
       <a href="{{ .URL | relURL }}"{{ if $.IsMenuCurrent "main" . }} aria-current="page"{{ end }}>{{ .Name }}</a>

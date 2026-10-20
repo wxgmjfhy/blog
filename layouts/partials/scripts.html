@@ -18,6 +18,40 @@
     t.parentNode.insertBefore(w, t);
     w.appendChild(t);
   });
+
+  // 代码块标题栏：语言名 + 复制按钮
+  document.querySelectorAll(".prose .highlight").forEach(function (el) {
+    var code = el.querySelector("code");
+    var lang = (code && code.getAttribute("data-lang")) || "";
+
+    var bar = document.createElement("div");
+    bar.className = "code-bar";
+
+    var label = document.createElement("span");
+    label.className = "code-lang";
+    label.textContent = lang;
+    bar.appendChild(label);
+
+    var btn = document.createElement("button");
+    btn.className = "code-copy";
+    btn.type = "button";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var text = code ? code.innerText : "";
+      var done = function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        done();
+      }
+    });
+    bar.appendChild(btn);
+
+    el.appendChild(bar);
+  });
 </script>
 <script defer src="{{ "/katex/katex.min.js" | relURL }}"></script>
 <script defer src="{{ "/katex/auto-render.min.js" | relURL }}"></script>

@@ -5,8 +5,6 @@ tags: ["AI Infra", "推理优化", "vLLM", "CUDA", "Triton"]
 categories: ["技术笔记"]
 keywords: ["AI Infra", "推理优化", "KV Cache", "PagedAttention", "FlashAttention", "CUDA"]
 ---
-> 24h 最小心智模型
-
 ## 一、LLM 的一次推理
 
 你给模型一句话，比如「介绍你自己」。它不会整段想好再吐出来，而是一次产出一个词（更准确说，

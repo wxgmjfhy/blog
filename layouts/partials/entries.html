@@ -8,7 +8,7 @@
     <p class="entry-summary">{{ . }}</p>
     {{- else }}
     {{- with .Summary }}
-    <p class="entry-summary">{{ . | plainify | replaceRE `\$\$[\s\S]*?\$\$` " " | replaceRE `\$[^$]*\$` " " | replaceRE `\s+` " " | strings.TrimSpace | truncate 120 "…" }}</p>
+    <p class="entry-summary">{{ . | plainify | htmlUnescape | replaceRE `\$\$[\s\S]*?\$\$` " " | replaceRE `\$[^$]*\$` " " | replaceRE `\s+` " " | strings.TrimSpace | truncate 120 "…" }}</p>
     {{- end }}
     {{- end }}
   </li>

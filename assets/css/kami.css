@@ -154,12 +154,23 @@ body {
   border-bottom: 1px solid var(--border-soft);
 }
 
+/* 顶栏钉在最左上角，与居中内容列解耦，避免各页宽度不同导致错位 */
 .masthead-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  width: auto;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 18px;
   height: var(--header-h);
+}
+
+@media (min-width: 900px) {
+  .masthead-inner {
+    padding-inline: 24px;
+  }
 }
 
 .wordmark {
@@ -688,9 +699,8 @@ main.col {
   position: absolute;
   top: 12px;
   left: 14px;
-  width: 8px;
+  width: 32px;   /* 容纳 0/12/24px 三个圆点，8px 会把后两个裁掉 */
   height: 8px;
-  border-radius: 50%;
   background-image: radial-gradient(circle, #ff7f7f 0 100%, transparent 100%),
     radial-gradient(circle, #ffd7a6 0 100%, transparent 100%),
     radial-gradient(circle, #8bffe0 0 100%, transparent 100%);

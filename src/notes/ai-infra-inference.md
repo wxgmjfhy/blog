@@ -3,7 +3,7 @@ title: "AI Infra 推理入门"
 date: 2026-08-15
 tags: ["AI Infra", "推理优化", "vLLM", "CUDA", "Triton"]
 categories: ["技术笔记"]
-description: "从一次推理里各算子的张量形状、GPU 的存储层次与计算单元，到 KV Cache 的容量估算、PagedAttention / Prefix cache、FlashAttention 与 Continuous Batching，最后落到 PyTorch、CUDA 与 Triton 的入门笔记。"
+keywords: ["AI Infra", "推理优化", "KV Cache", "PagedAttention", "FlashAttention", "CUDA"]
 ---
 > 24h 最小心智模型
 
@@ -61,7 +61,7 @@ Attention 更具体来讲，依次是：
 2. `reshape 成 heads`
 3. `RoPE(Q, K, position)` 位置编码，获得 token 之间的位置关系信息
 4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
-5. $\\mathrm{causal\\ mask} + \\mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
+5. $\mathrm{causal\ mask} + \mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
 6. $\times V$ 加权求和
 
 最后介绍 **MLP / FNN** —— Attention 更像是**从上下文中取信息**（在 token 之间，找出关联，丰富信息，得到融合了上下文信息的 token 表示）；而 MLP / FFN 更像是**在同一个 token 的特征之间做变换，对信息进行非线性加工和存储知识**：
@@ -200,7 +200,7 @@ KV Cache 的存储是一个问题，因为其非常大，而且是变长的。�
 
 回顾这三步：
 > 4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
-> 5. $\\mathrm{causal\\ mask} + \\mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
+> 5. $\mathrm{causal\ mask} + \mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
 > 6. $\times V$ 加权求和
 
 在 GPU 上，朴素 Attention 需要做三次 HBM -> SRAM -> HBM 的搬运：

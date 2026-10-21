@@ -3,10 +3,9 @@ title: "RL 异步 rollout"
 date: 2026-10-20T17:00:00+08:00
 tags: ["RL", "强化学习", "异步训练", "LLM"]
 categories: ["技术笔记"]
-description: "从 RL 基础、IMPALA/V-trace、Partial Rollout、AReaL，到 DeepSeek V4.1 / GLM-5.3 / MiMo V2.6 / Kimi K3 的异步 rollout 方案调研与总结。"
+keywords: ["RL", "异步 rollout", "Partial Rollout", "AReaL", "模型调研"]
 ---
-
-## RL 基础
+## 一、RL 基础
 
 一个 MDP 写作 $(\mathcal{S}, \mathcal{A}, P, R, \gamma)$，每一步形如：
 
@@ -46,7 +45,7 @@ $$\mathrm{training} \to \mathrm{rollout} \to \mathrm{training} \to \mathrm{rollo
 
 不过，rollout 阶段往往不是只采样一条轨迹，而是采样一个 batch、多条轨迹；一个 batch 内的生成长度是长尾分布，必须等最长的结束了才能进入训练，这导致大量的资源空闲；当前 LLM 的长上下文推理、以及 agent 长任务，又进一步加剧了这个问题。**针对这个问题，于是产生了异步 rollout，即 training 和 rollout 可以并发执行，意图提升整个系统的效率。但是异步 rollout 又引入了 off-policy 问题：用于训练当前策略 $\pi_\theta$ 的样本，是由旧策略 $\pi_{\mathrm{old}}$ 生成的。直接复用旧策略采样的样本更新当前策略，会造成轨迹分布与目标策略分布不匹配，导致策略梯度估计存在偏差，破坏策略更新的稳定性，甚至引发策略退化。**
 
-## 异步 rollout 技术
+## 二、异步 rollout 技术
 
 ### Off-policy：修正与容忍
 
@@ -165,7 +164,7 @@ $$
 
 rollout 相较于 training 执行得越快，staleness / off-policy 就越严重。左式可以理解为“rollout 目前相当于走了多少个 training step”，右式则是“当前是第 $i$ 个 step，允许 rollout 最多超前 $\eta$ 个 step”。这样，就限制了 $N_r$ 的增长速度，从而限制了 off-policy 的程度。
 
-## DeepSeek V4.1 / GLM-5.3 / MiMo V2.6 / Kimi K3 异步 rollout 技术调研
+## 三、DeepSeek V4.1 / GLM-5.3 / MiMo V2.6 / Kimi K3 异步 rollout 技术调研
 
 ### DeepSeek V4.1
 

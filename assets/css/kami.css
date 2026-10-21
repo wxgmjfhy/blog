@@ -91,6 +91,18 @@ body {
   text-autospace: ideograph-alpha ideograph-numeric;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 ::selection {
   background: #dde5f0;
   color: var(--near-black);
@@ -300,11 +312,13 @@ main.col {
   margin-bottom: 32px;
 }
 
+/* 列表页标题与单页标题保持同一规格 */
 .list-title {
   margin: 0;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: 1px;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
 }
 
 .list-desc {
@@ -344,7 +358,6 @@ main.col {
 
 .post-head {
   margin-bottom: 24px;
-  text-align: center;
 }
 
 .post-title {
@@ -359,7 +372,6 @@ main.col {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: center;
   gap: 8px;
   font-size: 13px;
   color: #9aa0a6;
@@ -449,7 +461,7 @@ main.col {
     max-width: 1140px;
   }
 
-  .post-body {
+  .post-body.has-toc {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 200px;
     gap: 52px;
@@ -485,10 +497,14 @@ main.col {
     padding-left: 10px;
   }
 
-  /* 标题与尾部导航对齐到正文列（右侧目录宽 200 + 间距 52） */
-  .post-head,
-  .post-nav {
+  /* 有目录时，标题与尾部导航限制在正文列宽度内（目录 200 + 间距 52） */
+  .has-toc ~ .post-nav,
+  .post-head {
     margin-right: 252px;
+  }
+
+  .post-body:not(.has-toc) ~ .post-nav {
+    margin-right: 0;
   }
 }
 
@@ -519,35 +535,38 @@ main.col {
 }
 
 /* 二级标题：上方细线 + 更大字号 */
+/* 标题左侧竖线：靠竖线粗细与颜色区分层级 */
 .prose h2 {
   margin: 2.1em 0 0.75em;
-  padding-top: 1.05em;
-  border-top: 1px solid var(--border);
+  padding-left: 15px;
+  border-left: 5px solid var(--brand);
   font-size: 27px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.3;
   letter-spacing: 0.5px;
 }
 
 .prose > h2:first-child {
   margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
 }
 
 /* 三级标题：墨蓝色，与正文区分 */
 .prose h3 {
   margin: 1.7em 0 0.55em;
+  padding-left: 11px;
+  border-left: 3px solid rgba(27, 54, 93, 0.4);
+  border-left-color: color-mix(in srgb, var(--brand) 42%, transparent);
   font-size: 21px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
   letter-spacing: 0.5px;
-  color: var(--brand);
 }
 
 /* 四级标题：中性色，靠字号和灰度区分 */
 .prose h4 {
   margin: 1.5em 0 0.45em;
+  padding-left: 9px;
+  border-left: 2px solid var(--rule-strong);
   font-size: 18px;
   font-weight: 700;
   color: var(--ink-mid);

@@ -14,10 +14,8 @@
   --border-soft: #e5e3d8;
   --brand: #1b365d;
   --brand-tint: #eef2f7;
-  --tag-bg: #e4ecf5;
   --near-black: #141413;
   --dark-warm: #3d3d3a;
-  --charcoal: #4d4c48;
   --olive: #504e49;
   --stone: #6b6a64;
 
@@ -26,7 +24,6 @@
   --ink: var(--near-black);
   --ink-mid: var(--dark-warm);
   --ink-soft: var(--stone);
-  --rule: var(--border);
   --rule-strong: #d6d2c4;
 
   --measure: 760px;
@@ -50,7 +47,6 @@
   --brand: #a9c1e2;
   --ivory: #211f1b;
   --inline-code-bg: #262320;
-  --tag-bg: #26303d;
 
   /* 深色下重定义 kami 原始 token */
   --border: #302c25;
@@ -61,7 +57,6 @@
   --olive: #b3ac95;
   --stone: #8e8778;
 
-  --rule: var(--border);
   --rule-strong: #453f35;
 
   --code-bg: #14130f;

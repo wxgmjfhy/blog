@@ -186,28 +186,38 @@ Pages 默认给 HTML 缓存 7 天，会导致"删掉的页面还在、改过的�
 
 **结论要来自解析 HTML，不要只看截图。** 截图只用来判断"好不好看"。
 
+注意：`class="katex"` 是浏览器渲染后才出现的，**静态文件里数不到**。本地只能数定界符：
+
 ```bash
 cd ~/projects/blog && export PATH="$HOME/.local/bin:$PATH"
 python3 scripts/mathprep.py >/dev/null && hugo --gc --minify --quiet
 
 python3 - <<'PY'
-import re
-s = open('public/notes/ai-infra-inference/index.html', encoding='utf-8').read()
-print('katex 节点:', len(re.findall(r'class="katex"', s)))   # 期望 107 左右
-print('katex 错误:', s.count('katex-error'))                  # 期望 0
-print('表格:', s.count('<table'))                             # 期望 5
-print('空语言 pre:', s.count('<pre><code class="">'))         # 期望 0
-print('meta:', re.findall(r'post-meta.*?</div>', s)[:1])
-PY
+import pathlib
+s = pathlib.Path('public/notes/ai-infra-inference/index.html').read_text(encoding='utf-8')
+print('$ 总数:', s.count('$'), '→ 公式约', s.count('$') // 2)   # 期望 ~111
+print('行间公式块:', s.count('math-display'))                   # 期望 1
+print('表格:', s.count('<table'))                               # 期望 5
+print('空语言 pre:', s.count('<pre><code class="">'))          # 期望 0
 ```
+
+渲染后的真实断言要用 `--dump-dom`（见下），期望 `class="katex"` ≈ 111、`katex-error` 0。
 
 线上回归（部署后约 100 秒 CI 才跑完）：
 
 ```bash
+# 1. 等 CI
 for i in $(seq 1 12); do
   gh run list --limit 1 --json status,conclusion 2>/dev/null | grep -q '"completed"' && break; sleep 10
 done
-curl -sL --noproxy '*' https://wxgmjfhy-blog.pages.dev/notes/ai-infra-inference/ | grep -c katex
+
+# 2. 拿到的是新内容吗（cf-cache-status 应该是 MISS/EXPIRED，age 应该很小）
+curl -sI --noproxy '*' https://wxgmjfhy-blog.pages.dev/notes/ai-infra-inference/ \
+  | grep -iE '^HTTP|cf-cache-status|^age|cache-control'
+
+# 3. 内容断言（静态 HTML 只能查定界符和锚点文本；要查渲染结果用 --dump-dom）
+curl -s --noproxy '*' https://wxgmjfhy-blog.pages.dev/notes/ai-infra-inference/ \
+  | python3 -c "import sys;s=sys.stdin.read();print('\\$',s.count('\$'),'table',s.count('<table'))"
 ```
 
 截图（WSL + Windows Chrome，路径要写成 Windows 形式）：
@@ -260,7 +270,7 @@ cp /mnt/c/Users/SIMON/AppData/Local/Temp/out.png /tmp/out.png   # 长页面切�
 
 1. `src/<section>/_index.md`（**必须有 title**，否则 Hugo 按目录名生成英文标题，例如 `Notes`）
 2. `hugo.yaml` 加 `permalinks.<section>`、`menu.main` 加一项
-3. 首页若也要展示该栏目，改 `layouts/index.html` 里的 `where site.Params.mainSections`
+3. 首页若也要展示该栏目，改 `layouts/index.html` 里的 `where site.RegularPages "Section" "notes"`
 
 ### 改样式
 

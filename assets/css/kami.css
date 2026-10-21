@@ -36,6 +36,8 @@
   /* 自托管霞鹜文楷优先；缺失时退系统楷体，最后退宋体 */
   --kai: "LXGW WenKai", "TsangerJinKai02", "STKaiti", "Kaiti SC", "KaiTi",
     "楷体", "Songti SC", Georgia, serif;
+  --code-bg: #f7f5ec;
+  --code-ink: #26231d;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 }
@@ -61,6 +63,9 @@
 
   --rule: var(--border);
   --rule-strong: #453f35;
+
+  --code-bg: #14130f;
+  --code-ink: #ddd8c9;
 }
 
 *,
@@ -669,53 +674,37 @@ main.col {
   overflow-wrap: break-word;
 }
 
-/* ---------- 代码块：深色 + 圆点标题栏 ---------- */
+/* ---------- 代码块：浅色纸面 + 顶部语言/复制栏 ---------- */
 
 .prose .highlight,
 .prose pre {
   position: relative;
-  margin: 1.6em 0;
+  margin: 1.7em 0;
+  padding-top: 30px;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #15141b;
-  color: #edecee;
+  background: var(--code-bg);
+  color: var(--code-ink);
   overflow: hidden;
-}
-
-.prose .highlight {
-  padding-top: 32px;
-  font-weight: 400;
 }
 
 .prose .highlight::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 32px;
-  border-bottom: 1px solid rgba(237, 236, 238, 0.07);
-}
-
-.prose .highlight::after {
-  content: "";
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  width: 32px;   /* 容纳 0/12/24px 三个圆点，8px 会把后两个裁掉 */
-  height: 8px;
-  background-image: radial-gradient(circle, #ff7f7f 0 100%, transparent 100%),
-    radial-gradient(circle, #ffd7a6 0 100%, transparent 100%),
-    radial-gradient(circle, #8bffe0 0 100%, transparent 100%);
-  background-size: 8px 8px, 8px 8px, 8px 8px;
-  background-position: 0 0, 12px 0, 24px 0;
-  background-repeat: no-repeat;
+  height: 30px;
+  border-bottom: 1px solid var(--border);
 }
 
 .prose .highlight pre {
   margin: 0;
+  padding: 6px 16px 16px;
+  border: 0;
   border-radius: 0;
   background: none;
-  padding: 4px 16px 16px;
+  color: inherit;
   overflow-x: auto;
-  line-height: 1.65;
+  line-height: 1.75;
 }
 
 .prose .highlight pre code {
@@ -723,8 +712,11 @@ main.col {
   border: 0;
   background: none;
   color: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: 0;
   white-space: pre;
+  tab-size: 2;
 }
 
 .code-bar {
@@ -732,20 +724,20 @@ main.col {
   top: 0;
   left: 0;
   right: 0;
-  height: 32px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px 0 52px;
+  padding: 0 10px 0 14px;
   font-family: var(--mono);
   pointer-events: none;
 }
 
 .code-lang {
   font-size: 11px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(237, 236, 238, 0.55);
+  color: var(--ink-soft);
 }
 
 .code-copy {
@@ -754,7 +746,7 @@ main.col {
   border: 0;
   border-radius: 4px;
   background: none;
-  color: rgba(237, 236, 238, 0.62);
+  color: var(--ink-soft);
   font-family: var(--mono);
   font-size: 11px;
   cursor: pointer;
@@ -762,11 +754,15 @@ main.col {
 }
 
 .code-copy:hover {
-  color: #edecee;
-  background: rgba(162, 119, 255, 0.14);
+  color: var(--brand);
+  background: var(--brand-tint);
 }
 
-/* chroma 深色主题 */
+[data-theme="dark"] .code-copy:hover {
+  background: rgba(169, 193, 226, 0.12);
+}
+
+/* chroma：暖灰 + 墨蓝 + 橄榄，最多三色，避免深色 IDE 那种花哨 */
 .chroma {
   background: none;
 }
@@ -774,9 +770,16 @@ main.col {
 .chroma .c,
 .chroma .c1,
 .chroma .cm,
-.chroma .cs {
-  color: #6b6a72;
+.chroma .cs,
+.chroma .ch {
+  color: var(--ink-soft);
   font-style: italic;
+}
+
+.chroma .cp,
+.chroma .cpf {
+  color: #8a7048;
+  font-style: normal;
 }
 
 .chroma .k,
@@ -785,7 +788,7 @@ main.col {
 .chroma .kn,
 .chroma .kr,
 .chroma .kt {
-  color: #a277ff;
+  color: var(--brand);
 }
 
 .chroma .s,
@@ -798,31 +801,44 @@ main.col {
 .chroma .sh,
 .chroma .si,
 .chroma .sr,
-.chroma .sx {
-  color: #61ffca;
+.chroma .sx,
+.chroma .sa {
+  color: #6a6a4e;
 }
 
 .chroma .m,
 .chroma .mh,
 .chroma .mi,
 .chroma .mo,
-.chroma .mf {
-  color: #ffca85;
+.chroma .mf,
+.chroma .il {
+  color: #8a7048;
 }
 
 .chroma .nf,
-.chroma .fm {
-  color: #ffd7a6;
+.chroma .fm,
+.chroma .nc {
+  color: var(--code-ink);
+  font-weight: 600;
 }
 
 .chroma .o,
-.chroma .ow {
-  color: #d8d4e0;
+.chroma .ow,
+.chroma .p {
+  color: var(--ink-mid);
+}
+
+.chroma .n,
+.chroma .nx,
+.chroma .na,
+.chroma .nb {
+  color: var(--code-ink);
 }
 
 .chroma .lnt,
-.chroma .ln {
-  color: #55535e;
+.chroma .ln,
+.chroma .lntable {
+  color: var(--ink-soft);
   user-select: none;
 }
 

@@ -2,10 +2,9 @@
 title: "GYM102759 - XXI Open Cup, Grand Prix of Korea"
 date: 2025-10-15T19:29:00+08:00
 tags: ["题解", "ICPC"]
-description: "GYM102759（XXI Open Cup, Grand Prix of Korea）题解，逐题思路与实现。"
+description: "GYM102759（XXI Open Cup, Grand Prix of Korea）A、C、D、F、H、I、J、K 八题的题解。"
 ---
 
-## GYM102759 - XXI Open Cup, Grand Prix of Korea
 
 ### A
 

@@ -11,7 +11,8 @@ pagination:
   pagerSize: 20
 
 permalinks:
-  posts: /posts/:contentbasename/
+  notes: /notes/:contentbasename/
+  solutions: /solutions/:contentbasename/
 
 markup:
   goldmark:
@@ -41,9 +42,12 @@ params:
 
 menu:
   main:
-    - name: 文章
-      url: /posts/
+    - name: 笔记
+      url: /notes/
       weight: 10
+    - name: 题解
+      url: /solutions/
+      weight: 20
     - name: 关于
       url: /about/
-      weight: 20
+      weight: 30

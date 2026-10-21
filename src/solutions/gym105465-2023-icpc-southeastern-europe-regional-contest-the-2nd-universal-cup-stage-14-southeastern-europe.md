@@ -2,10 +2,9 @@
 title: "GYM105465 - 2023 ICPC Southeastern Europe Regional Contest (The 2nd Universal Cup, Stage 14: Southeastern Europe)"
 date: 2025-10-15T19:33:00+08:00
 tags: ["题解", "ICPC"]
-description: "GYM105465（2023 ICPC Southeastern Europe Regional Contest，The 2nd Universal Cup Stage 14）题解，含 A–B 的思路与代码。"
+description: "GYM105465（2023 ICPC Southeastern Europe Regional Contest，The 2nd Universal Cup Stage 14）B、E、F、G、J、K、M 七题的题解。"
 ---
 
-## GYM105465 - 2023 ICPC Southeastern Europe Regional Contest (The 2nd Universal Cup, Stage 14: Southeastern Europe)
 
 ### B
 

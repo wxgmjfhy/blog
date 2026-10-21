@@ -1,6 +1,6 @@
 {{ define "main" }}
 <h1 class="visually-hidden">{{ site.Title }}</h1>
 <section class="index">
-  {{ partial "entries.html" (where site.RegularPages "Section" "posts") }}
+  {{ partial "entries.html" (where site.RegularPages "Section" "notes") }}
 </section>
 {{ end }}

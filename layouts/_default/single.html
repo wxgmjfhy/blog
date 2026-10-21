@@ -12,12 +12,6 @@
       <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">{{ .Date.Format "2006-01-02" }}</time>
       <span aria-hidden="true">·</span>
       <span>{{ .WordCount }} 字</span>
-      <span aria-hidden="true">·</span>
-      <span>约 {{ .ReadingTime }} 分钟</span>
-      {{- with .Params.tags }}
-      <span aria-hidden="true">·</span>
-      <span class="post-tags">{{ delimit . " / " }}</span>
-      {{- end }}
     </div>
     {{- end }}
   </header>

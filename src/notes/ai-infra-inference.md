@@ -56,8 +56,8 @@ Q 和 K 比较相似度，“找到” V，进行加权求和。
 
 Attention 更具体来讲，依次是：
 1. $Q = xW_Q$，$K = xW_K$，$V = xW_V$
-2. `reshape 成 heads`
-3. `RoPE(Q, K, position)` 位置编码，获得 token 之间的位置关系信息
+2. reshape 成 heads
+3. 位置编码 `RoPE(Q, K, position)`，获得 token 之间的位置关系信息
 4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
 5. $\mathrm{causal\ mask} + \mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
 6. $\times V$ 加权求和

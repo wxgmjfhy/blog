@@ -322,13 +322,6 @@ main.col {
   color: var(--ink-mid);
 }
 
-.entry-keywords {
-  margin: 0;
-  font-size: 14.5px;
-  letter-spacing: 0.3px;
-  color: var(--ink-soft);
-}
-
 /* ---------- 列表页 / 标签页 ---------- */
 
 .list-head {

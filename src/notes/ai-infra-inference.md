@@ -36,10 +36,8 @@ Qwen3-0.6B 有 N = 28 层 decoder block，每一层主要包括：
 4. MLP / FFN
 
 教科书级别的 pre-norm 可以如下表示：
-```
-x = x + Attn(Norm(x))
-x = x + MLP(Norm(x))
-```
+> x = x + Attn(Norm(x))  
+> x = x + MLP(Norm(x))  
 
 这里面的计算有 Norm，加法，Attn 和 MLP，而在 nano-vllm 中，为了减少 GPU 计算时搬用数据的消耗，采取了算子融合的手段：将加残差推迟到下一次的 Norm 中去做。
 
@@ -93,29 +91,25 @@ Attention 更具体来讲，依次是：
 
 因此：
 
-```
-Q 投影输出宽度 = num_attention_heads × head_dim = 16 × 128 = 2048
-K/V 投影输出宽度 = num_key_value_heads × head_dim = 8 × 128 = 1024
-GQA 共用比 = 16 / 8 = 2    （每 2 个 Q 头共用 1 组 K/V）
-softmax 缩放 = 1 / √head_dim = 1 / √128 ≈ 0.0884
-```
+> Q 投影输出宽度 = num_attention_heads × head_dim = 16 × 128 = 2048  
+> K/V 投影输出宽度 = num_key_value_heads × head_dim = 8 × 128 = 1024  
+> GQA 共用比 = 16 / 8 = 2    （每 2 个 Q 头共用 1 组 K/V）  
+> softmax 缩放 = 1 / √head_dim = 1 / √128 ≈ 0.0884  
 
 残差流全程是 `[T, 1024]`，T 是本步送进模型的 token 数。Q 投影把每个位置扩到 2048 再拆成 16 个头，算完注意力再乘输出投影，回到 1024。
 
 一次前向里和形状有关的矩阵乘（写成 `[T, in] @ [in, out]`）：
 
-```
-Embedding 查表          vocab × hidden     = 151936 × 1024
-
-Q                       [T, 1024] @ [1024, 2048] → [T, 16, 128]
-K / V                   [T, 1024] @ [1024, 1024] → [T, 8, 128]
-O（注意力输出投影）     [T, 2048] @ [2048, 1024] → [T, 1024]
-
-SwiGLU 的 gate+up       [T, 1024] @ [1024, 6144] → 劈成两半各 3072
-SwiGLU 的 down          [T, 3072] @ [3072, 1024] → [T, 1024]
-
-LM Head（只取最后位置） [1024] @ [1024, 151936] → 151936 维 logits
-```
+> Embedding 查表          vocab × hidden     = 151936 × 1024  
+>
+> Q                       [T, 1024] @ [1024, 2048] → [T, 16, 128]  
+> K / V                   [T, 1024] @ [1024, 1024] → [T, 8, 128]  
+> O（注意力输出投影）     [T, 2048] @ [2048, 1024] → [T, 1024]  
+>
+> SwiGLU 的 gate+up       [T, 1024] @ [1024, 6144] → 劈成两半各 3072  
+> SwiGLU 的 down          [T, 3072] @ [3072, 1024] → [T, 1024]  
+>
+> LM Head（只取最后位置） [1024] @ [1024, 151936] → 151936 维 logits  
 
 ## 二、GPU
 
@@ -202,11 +196,9 @@ KV Cache 的存储是一个问题，因为其非常大，而且是变长的。�
 ### FlashAttention & Online Softmax
 
 回顾这三步：
-```
-4. `score = Q K^T / √d` 计算相似度
-5. `causal mask + softmax` 遮住（mask）未来，并经过 softmax 变为权重
-6. `× V` 加权求和
-```
+> 4. `score = Q K^T / √d` 计算相似度  
+> 5. `causal mask + softmax` 遮住（mask）未来，并经过 softmax 变为权重  
+> 6. `× V` 加权求和  
 
 在 GPU 上，朴素 Attention 需要做三次 HBM -> SRAM -> HBM 的搬运：
 1. 计算 `S = Q K^T / √d + Mask`
@@ -216,11 +208,9 @@ KV Cache 的存储是一个问题，因为其非常大，而且是变长的。�
 再次回顾 Attention 中的计算：
 - 记 T 是本步送进模型的 token 数
 - 记 d 是每个头的宽度（head_dim）
-```
-Q K V     [T, d]
-S P       [T, T]
-O         [T, d]
-```
+> Q K V     [T, d]  
+> S P       [T, T]  
+> O         [T, d]  
 
 **S 和 P 都要在 HBM 上经过一次读和一次写，当 T >> d 时，搬运的时间复杂度是 4T²。**
 
@@ -230,35 +220,33 @@ O         [T, d]
 - softmax(xi) = e^(xi) / sum(e^(xj))，实现上防止 exp 溢出转为 softmax(xi) = e^(xi - max) / sum(e^(xj - max))
 - 理论上要有 max，就得先得到所有的 xi；但就像加法可以累加、乘法可以累乘，stdev、softmax 等一些运算可以构造有限维状态向量递推更新
 
-```
-状态 S = (MAX, SUM), MAX = max(xi), SUM = sum(e^(xi - MAX))
-
-新来样本 xj
-1. xj > MAX：MAX = xj, SUM = sum(e^(xi - xj))
-2. 否则：SUM = SUM + e^(xj - MAX)
-
-Attention 还需要乘以 V，那么再维护一个 a = sum(e^(xi - MAX) * vi) 即可
-```
+> 状态 S = (MAX, SUM), MAX = max(xi), SUM = sum(e^(xi - MAX))  
+>
+> 新来样本 xj  
+>
+> 1. xj > MAX：MAX = xj, SUM = sum(e^(xi - xj))  
+> 2. 否则：SUM = SUM + e^(xj - MAX)  
+>
+> Attention 还需要乘以 V，那么再维护一个 a = sum(e^(xi - MAX) * vi) 即可  
 
 分块后的复杂度计算：
-```
-Q 按行切成块长 Br，K V 按行切成块长 Bc
-
-Qi              [Br, d]
-Kj Vj           [Bc, d]
-Sij = Qi Kj^T   [Br, Bc]
-
-那么 SRAM 的内存 M >= Br*d + 2*Bc*d + Br*Bc
-
-Br, Bc 也往往由 M 决定，取 Br = Θ(min(d, M/d)), Bc = Θ(M/d)
-
-T/Br 个 Qi 需要和全部 Kj Vj 都过一遍，计算搬运量：
-- Q 读 1 次 T*d
-- O 写 1 次 T*d
-- K V 读 T/Br 次 2*T/Br*T*d = (2T² d)/Br
-
-因此，复杂度为 2Td + (2T² d)/Br，代入 Br = Θ(min(d, M/d)) 后为 2Td + (2T² d²)/M
-```
+> Q 按行切成块长 Br，K V 按行切成块长 Bc  
+>
+> Qi              [Br, d]  
+> Kj Vj           [Bc, d]  
+> Sij = Qi Kj^T   [Br, Bc]  
+>
+> 那么 SRAM 的内存 M >= Br*d + 2*Bc*d + Br*Bc  
+>
+> Br, Bc 也往往由 M 决定，取 Br = Θ(min(d, M/d)), Bc = Θ(M/d)  
+>
+> T/Br 个 Qi 需要和全部 Kj Vj 都过一遍，计算搬运量：  
+>
+> - Q 读 1 次 T*d  
+> - O 写 1 次 T*d  
+> - K V 读 T/Br 次 2*T/Br*T*d = (2T² d)/Br  
+>
+> 因此，复杂度为 2Td + (2T² d)/Br，代入 Br = Θ(min(d, M/d)) 后为 2Td + (2T² d²)/M  
 
 通常情况下，Θ(T²) >> Θ(Td + (T² d²)/M)，FlashAttention 显著降低了搬运量。
 
@@ -266,16 +254,14 @@ T/Br 个 Qi 需要和全部 Kj Vj 都过一遍，计算搬运量：
 
 要理解 Continuous Batching，我们先来看传统静态 batching：攒够一批请求，推理完这一批再接下一批。
 
-```
-batch = [req_1, req_2, req_3]
-
-step 1: 1, 2, 3 同时生成第 1 个 token
-step 2: 1, 2, 3 同时生成第 2 个 token
-...
-step 7: 可能 1 结束了，此时 2，3 继续生成第 7 个 token
-...
-step N: 1, 2, 3 均结束生成
-```
+> batch = [req_1, req_2, req_3]  
+>
+> step 1: 1, 2, 3 同时生成第 1 个 token  
+> step 2: 1, 2, 3 同时生成第 2 个 token  
+> ...  
+> step 7: 可能 1 结束了，此时 2，3 继续生成第 7 个 token  
+> ...  
+> step N: 1, 2, 3 均结束生成  
 
 显然存在木桶效应：推理服务中往往不同的请求之间输出长度差距大，一个 batch 的时间由最长的请求决定。
 
@@ -370,11 +356,11 @@ int main(void)
 1. 一个 kernel 使用的 block 数量
 2. 一个 thread block 中的 thread 数量（必须是 32 的倍数）
 
-```
-Kernel 是一段 GPU 程序，对应「对整块数据做同一种事」，比如一次矩阵乘、一次写 KV。CPU 发起一次 launch：用多大并行度、跑哪个 kernel。
-
-一张卡有很多 SM，一次 kernel 的 grid（一次 launch 的全部 block）被拆成许多 block（共享内存的一组 thread），每个 block 进一个 SM，block 里的 thread（一个工作项，用自己的寄存器）再按 warp（锁步的 32 个 thread，锁步指 32 个 thread 必须同时做同一种指令）被调度。
-```
+> 回顾前文：
+>
+> Kernel 是一段 GPU 程序，对应「对整块数据做同一种事」，比如一次矩阵乘、一次写 KV。CPU 发起一次 launch：用多大并行度、跑哪个 kernel。
+>
+> 一张卡有很多 SM，一次 kernel 的 grid（一次 launch 的全部 block）被拆成许多 block（共享内存的一组 thread），每个 block 进一个 SM，block 里的 thread（一个工作项，用自己的寄存器）再按 warp（锁步的 32 个 thread，锁步指 32 个 thread 必须同时做同一种指令）被调度。
 
 假设我们讲 `<<<1, 1>>>` 改为 `<<<1, 256>>>`，这个 kernel 就会自动 256 个 thread 并行计算吗？不会。事实上，如果不修改 kernel 的代码，这个 kernel 会在每个 thread 中执行一次，即重复算 256 次。
 

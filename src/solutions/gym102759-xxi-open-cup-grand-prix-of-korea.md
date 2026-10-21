@@ -5,7 +5,6 @@ tags: ["题解", "ICPC"]
 description: "GYM102759（XXI Open Cup, Grand Prix of Korea）A、C、D、F、H、I、J、K 八题的题解。"
 ---
 
-
 ### A
 
 ```cpp

@@ -1,12 +1,13 @@
-# 带内容指纹的静态资源，可长期缓存
+# 先给全局兜底：HTML 不缓存 7 天，避免删除/改名的页面在边缘滞留
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# 带内容指纹的静态资源可长期缓存（写在后面以覆盖上面的兜底）
 /css/*
   Cache-Control: public, max-age=31536000, immutable
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 /katex/*
   Cache-Control: public, max-age=31536000, immutable
-
-# HTML 每次都校验，保证更新即时生效
-/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin

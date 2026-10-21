@@ -1,0 +1,5 @@
+# 栏目拆分后，旧链接永久重定向
+/posts/rl-async-rollout/   /notes/rl-async-rollout/   301
+/posts/*                   /solutions/:splat          301
+/posts/                    /notes/                    301
+/posts                      /notes/                   301

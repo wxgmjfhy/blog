@@ -2,7 +2,7 @@
 <ul class="toc-list">
   {{- range . }}
   <li>
-    <a href="#{{ .ID }}">{{ .Title }}</a>
+    <a href="#{{ .ID }}">{{ .Title | htmlUnescape }}</a>
     {{- with .Headings }}{{ partial "toc-tree.html" . }}{{ end }}
   </li>
   {{- end }}

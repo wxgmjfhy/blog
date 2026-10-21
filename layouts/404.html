@@ -1,0 +1,14 @@
+{{ define "main" }}
+<div class="post">
+  <header class="post-head">
+    <h1 class="post-title">页面不存在</h1>
+    <div class="post-meta"><span>404</span></div>
+  </header>
+  <div class="post-body">
+    <div class="prose">
+      <p>这里什么也没有。可能是链接写错了，或者文章已经搬走。</p>
+      <p>回到<a href="{{ "/" | relURL }}">首页</a>看看，或者翻<a href="{{ "/posts/" | relURL }}">文章列表</a>。</p>
+    </div>
+  </div>
+</div>
+{{ end }}

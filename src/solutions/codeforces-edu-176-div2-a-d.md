@@ -2,7 +2,7 @@
 title: "codeforces edu 176, div2, A-D"
 date: 2025-03-18T00:43:00+08:00
 tags: ["题解", "Codeforces"]
-description: "Codeforces Educational Round 176 Div.2 的 A–D 题解。"
+description: "A–D 题解。"
 ---
 
 ## cf2075

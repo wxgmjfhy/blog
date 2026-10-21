@@ -2,7 +2,7 @@
 title: "codeforces edu 175, div2, A-E"
 date: 2025-02-28T00:57:00+08:00
 tags: ["题解", "Codeforces"]
-description: "Codeforces Educational Round 175 Div.2 的 A–E 题解。"
+description: "A–E 题解。"
 ---
 
 ## cf2070

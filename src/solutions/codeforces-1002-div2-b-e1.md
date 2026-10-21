@@ -2,7 +2,7 @@
 title: "codeforces 1002, div2, B-E1"
 date: 2025-02-04T23:12:00+08:00
 tags: ["题解", "Codeforces"]
-description: "Codeforces Round 1002 Div.2 的 B–E1 题解。"
+description: "B–E1 题解。"
 ---
 
 ## cf2059

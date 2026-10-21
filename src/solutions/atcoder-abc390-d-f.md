@@ -2,7 +2,7 @@
 title: "atcoder abc390, D-F"
 date: 2025-01-26T00:50:00+08:00
 tags: ["题解", "AtCoder"]
-description: "AtCoder Beginner Contest 390 的 D–F 题解。"
+description: "D–F 题解。"
 ---
 
 ## abc390

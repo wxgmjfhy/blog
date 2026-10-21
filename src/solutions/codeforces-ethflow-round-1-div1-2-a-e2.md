@@ -2,7 +2,7 @@
 title: "codeforces Ethflow Round 1, div1+2, A-E2"
 date: 2025-01-29T18:32:00+08:00
 tags: ["题解", "Codeforces"]
-description: "Codeforces Ethflow Round 1（Div.1+2）的 A–E2 题解。"
+description: "A–E2 题解。"
 ---
 
 ## cf2062

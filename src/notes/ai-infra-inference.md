@@ -58,7 +58,7 @@ Attention 更具体来讲，依次是：
 1. $Q = xW_Q$，$K = xW_K$，$V = xW_V$
 2. reshape 成 heads
 3. 位置编码 `RoPE(Q, K, position)`，获得 token 之间的位置关系信息
-4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
+4. $\mathrm{score} = \frac{QK^\top}{\sqrt{d}}$ 计算相似度
 5. $\mathrm{causal\ mask} + \mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
 6. $\times V$ 加权求和
 
@@ -87,7 +87,7 @@ Attention 更具体来讲，依次是：
 
 注意：
 - $\mathrm{head\_dim} = 128$ 是配置给出的
-- 不能这样计算：$\mathrm{head\_dim} = \mathrm{hidden\_size} / \mathrm{num\_attention\_heads} = 1024/16 = 64$
+- 不能这样计算：$\mathrm{head\_dim} = \frac{\mathrm{hidden\_size}}{\mathrm{num\_attention\_heads}} = \frac{1024}{16} = 64$
 
 因此：
 
@@ -95,8 +95,8 @@ Attention 更具体来讲，依次是：
 |---|---|---|
 | Q 投影输出宽度 | $\mathrm{num\_attention\_heads} \times \mathrm{head\_dim} = 16 \times 128$ | $2048$ |
 | K/V 投影输出宽度 | $\mathrm{num\_key\_value\_heads} \times \mathrm{head\_dim} = 8 \times 128$ | $1024$ |
-| GQA 共用比 | $16 / 8$ | $2$（每 2 个 Q 头共用 1 组 K/V） |
-| softmax 缩放 | $1 / \sqrt{\mathrm{head\_dim}} = 1 / \sqrt{128}$ | $\approx 0.0884$ |
+| GQA 共用比 | $\frac{16}{8}$ | $2$（每 2 个 Q 头共用 1 组 K/V） |
+| softmax 缩放 | $\frac{1}{\sqrt{\mathrm{head\_dim}}} = \frac{1}{\sqrt{128}}$ | $\approx 0.0884$ |
 
 残差流全程是 $[T, 1024]$，$T$ 是本步送进模型的 token 数。Q 投影把每个位置扩到 2048 再拆成 16 个头，算完注意力再乘输出投影，回到 1024。
 
@@ -105,10 +105,10 @@ Attention 更具体来讲，依次是：
 | 算子 | 形状变化 |
 |---|---|
 | Embedding 查表 | $\text{vocab} \times \text{hidden} = 151936 \times 1024$ |
-| Q | $[T, 1024] \;@\; [1024, 2048] \to [T, 16, 128]$ |
-| K / V | $[T, 1024] \;@\; [1024, 1024] \to [T, 8, 128]$ |
+| Q | $[T, 1024] \;@\; [1024, 2048] \to [T, 16, 128]$ （多头）|
+| K / V | $[T, 1024] \;@\; [1024, 1024] \to [T, 8, 128]$ （多头）|
 | O（注意力输出投影） | $[T, 2048] \;@\; [2048, 1024] \to [T, 1024]$ |
-| SwiGLU 的 gate+up | $[T, 1024] \;@\; [1024, 6144]$ → 劈成两半各 3072 |
+| SwiGLU 的 gate+up | $[T, 1024] \;@\; [1024, 6144] \to [T, 3072]$（劈成两半） |
 | SwiGLU 的 down | $[T, 3072] \;@\; [3072, 1024] \to [T, 1024]$ |
 | LM Head（只取最后位置） | $[1024] \;@\; [1024, 151936] \to 151936$ 维 logits |
 
@@ -197,18 +197,19 @@ KV Cache 的存储是一个问题，因为其非常大，而且是变长的。�
 ### FlashAttention & Online Softmax
 
 回顾这三步：
-> 4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
+> 4. $\mathrm{score} = \frac{QK^\top}{\sqrt{d}}$ 计算相似度
 > 5. $\mathrm{causal\ mask} + \mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
 > 6. $\times V$ 加权求和
 
 在 GPU 上，朴素 Attention 需要做三次 HBM -> SRAM -> HBM 的搬运：
-1. 计算 $S = QK^\top / \sqrt{d} + \mathrm{Mask}$
+1. 计算 $S = \frac{QK^\top}{\sqrt{d}} + \mathrm{Mask}$
 2. 计算 $P = \mathrm{softmax}(S)$
 3. 计算 $O = PV$
 
 再次回顾 Attention 中的计算：
 - 记 $T$ 是本步送进模型的 token 数
 - 记 $d$ 是每个头的宽度（head_dim）
+
 | 张量 | 形状 |
 |---|---|
 | $Q, K, V$ | $[T, d]$ |
@@ -220,7 +221,7 @@ KV Cache 的存储是一个问题，因为其非常大，而且是变长的。�
 **FlashAttention** 采取了分块的策略来减少搬运的消耗，核心思想：HBM 上不出现 S 和 P，块内采用 online / 流式 softmax 计算。
 
 什么是 online softmax？
-- $\mathrm{softmax}(x_i) = e^{x_i} / \sum_j e^{x_j}$，实现上防止 exp 溢出转为 $\mathrm{softmax}(x_i) = e^{x_i - \max} / \sum_j e^{x_j - \max}$
+- $\mathrm{softmax}(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}$，实现上防止 exp 溢出转为 $\mathrm{softmax}(x_i) = \frac{e^{x_i - \max}}{\sum_j e^{x_j - \max}}$
 - 理论上要有 max，就得先得到所有的 $x_i$；但就像加法可以累加、乘法可以累乘，stdev、softmax 等一些运算可以构造有限维状态向量递推更新
 
 > 状态 $(\mathrm{MAX}, \mathrm{SUM})$，其中 $\mathrm{MAX} = \max_i x_i$，$\mathrm{SUM} = \sum_i e^{x_i - \mathrm{MAX}}$
@@ -243,16 +244,16 @@ $Q$ 按行切成块长 $B_r$，$K$、$V$ 按行切成块长 $B_c$：
 
 那么 SRAM 的内存 $M \ge B_r d + 2 B_c d + B_r B_c$。
 
-$B_r$、$B_c$ 也往往由 $M$ 决定，取 $B_r = \Theta(\min(d, M/d))$，$B_c = \Theta(M/d)$。
+$B_r$、$B_c$ 也往往由 $M$ 决定，取 $B_r = \Theta\left(\min\left(d, \frac{M}{d}\right)\right)$，$B_c = \Theta\left(\frac{M}{d}\right)$。
 
-$T/B_r$ 个 $Q_i$ 需要和全部 $K_j$、$V_j$ 都过一遍，计算搬运量：
+$\frac{T}{B_r}$ 个 $Q_i$ 需要和全部 $K_j$、$V_j$ 都过一遍，计算搬运量：
 - $Q$ 读 1 次，共 $Td$
 - $O$ 写 1 次，共 $Td$
-- $K$、$V$ 读 $T/B_r$ 次，共 $2 \cdot (T/B_r) \cdot T d = \frac{2T^2 d}{B_r}$
+- $K$、$V$ 读 $\frac{T}{B_r}$ 次，共 $2 \cdot \left(\frac{T}{B_r}\right) \cdot T d = \frac{2T^2 d}{B_r}$
 
-因此，复杂度为 $2Td + \frac{2T^2 d}{B_r}$，代入 $B_r = \Theta(\min(d, M/d))$ 后为 $2Td + \frac{2T^2 d^2}{M}$
+因此，复杂度为 $2Td + \frac{2T^2 d}{B_r}$，代入 $B_r = \Theta\left(\min\left(d, \frac{M}{d}\right)\right)$ 后为 $2Td + \frac{2T^2 d^2}{M}$
 
-通常情况下，$\Theta(T^2) \gg \Theta(Td + T^2 d^2 / M)$，FlashAttention 显著降低了搬运量。
+通常情况下，$\Theta(T^2) \gg \Theta\left(Td + \frac{T^2 d^2}{M}\right)$，FlashAttention 显著降低了搬运量。
 
 ### Continuous Batching & Chunked Prefill
 

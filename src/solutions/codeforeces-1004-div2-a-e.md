@@ -2,7 +2,7 @@
 title: "codeforeces 1004, div2, A-E"
 date: 2025-02-12T01:00:00+08:00
 tags: ["题解", "Codeforces"]
-description: "Codeforces Round 1004 Div.2 的 A–E 题解。"
+description: "A–E 题解。"
 ---
 
 ## cf2067

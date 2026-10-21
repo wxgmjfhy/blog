@@ -1,9 +1,0 @@
-<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/css/fonts.min.d9e41b97d2946aef528340e0301d6d096a8f1fb68539548af150855b394bab39.css"></head>
-<body><div id="o">pending</div><script>
-var S='Hamburgefonstiv 12345';
-document.fonts.load('40px "LXGW WenKai"','记录技术'+S).then(function(f){
-  var c=document.createElement('canvas').getContext('2d');
-  function w(x){c.font='40px '+x;return Math.round(c.measureText(S).width*100)/100;}
-  document.getElementById('o').textContent='faces='+f.length+' LXGW='+w('"LXGW WenKai"')+' sans='+w('sans-serif')+' KaiTi='+w('KaiTi');
-}).catch(function(e){document.getElementById('o').textContent='ERR '+e.message});
-</script></body></html>

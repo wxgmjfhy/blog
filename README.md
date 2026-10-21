@@ -4,24 +4,28 @@
 
 线上地址：<https://wxgmjfhy-blog.pages.dev/>
 
+> 要动手改代码/内容，先看 [AGENTS.md](AGENTS.md)：命令、约定、已知坑、验证流程都在那里。
+
 ## 目录结构
 
 ```
 .
-├── src/                        # 文章源文件（你要编辑的地方）
+├── src/                        # 文章源文件（唯一需要编辑的内容目录）
 │   ├── about.md
-│   └── posts/
+│   ├── notes/                  # 笔记 → /notes/<basename>/
+│   │   ├── _index.md
+│   │   └── ai-infra-inference.md
+│   └── solutions/              # 题解 → /solutions/<basename>/
 │       ├── _index.md
-│       └── rl-async-rollout.md
+│       └── ...
 ├── content/                    # 由 src/ 生成，不要手改（已在 .gitignore）
 ├── scripts/mathprep.py         # 预处理：保护公式，见下
 ├── assets/css/kami.css         # 全站样式
 ├── layouts/                    # 模板
-├── static/
-│   ├── katex/                  # KaTeX 本地托管（无 CDN 依赖）
-│   └── favicon.svg
+├── static/                     # _headers / _redirects / katex / fonts / favicon
 ├── hugo.yaml
-└── Makefile
+├── Makefile
+└── AGENTS.md                   # 维护手册
 ```
 
 ## 日常使用
@@ -31,18 +35,18 @@ make dev      # 本地预览 http://localhost:1313（含草稿）
 make build    # 生成 public/
 ```
 
-新增文章：直接在 `src/posts/` 下建 `.md`，front matter 照抄现有文章的格式。
+新增文章：在 `src/notes/` 或 `src/solutions/` 下建 `.md`，文件名即 URL，front matter 照抄现有文章的格式。
 
 ```markdown
 ---
 title: "标题"
 date: 2026-10-20T17:00:00+08:00
 tags: ["标签"]
-description: "一句话摘要，会显示在首页列表和 RSS 里"
+description: "一句话摘要，会显示在列表卡片和 meta/og 里；不填就只有日期+标题"
 ---
 ```
 
-草稿把 `draft: true` 写上就不发布。
+草稿把 `draft: true` 写上就不发布；`hidemeta: true` 隐藏「日期 · N 字」。
 
 ## 为什么不直接编辑 content/
 
@@ -101,7 +105,8 @@ export CLOUDFLARE_ACCOUNT_ID="$(cat ~/.cf-account)"
 - 楷体主导：`TsangerJinKai02 → STKaiti → Kaiti SC → KaiTi → 楷体 → Songti SC`
 - 正文 18px / 行高 1.9 / 字距 0.3px；正文栏 760px，≥1000px 时放宽到 900px
 - 表格只用发丝线，无竖线、无斑马纹
-- 代码块深色底 + 圆点标题栏 + 复制按钮
+- 代码块浅纸底 + 语言名与 Copy 按钮（没有红黄绿圆点），暗色模式保持深底
+- 标题靠左侧竖线分层（h2 实色 / h3 42% / h4 暖灰）；≥1200px 显示右侧目录
 - 支持深浅色切换（默认浅色，跟随手动选择，存 localStorage）
 
 字体：正文使用自托管的**霞鹜文楷**（LXGW WenKai, OFL）。用 fontTools 从

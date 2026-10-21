@@ -1,11 +1,5 @@
 {{ define "main" }}
-<section class="lede">
-  <h1 class="lede-title">记录与思考</h1>
-  <p class="lede-text">这里放技术笔记、项目记录，和一些没想清楚就写下来的东西。</p>
-</section>
-
 <section class="index">
-  <h2 class="index-head">文章</h2>
   {{ partial "entries.html" (where site.RegularPages "Section" "posts") }}
 </section>
 {{ end }}

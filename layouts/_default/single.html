@@ -1,4 +1,9 @@
 {{ define "main" }}
+{{- $hasToc := gt (len .Fragments.HeadingsMap) 0 -}}
+{{- $toc := .Fragments.Headings -}}
+{{- if and (eq (len $toc) 1) (not (index $toc 0).ID) -}}
+  {{- $toc = (index $toc 0).Headings -}}
+{{- end -}}
 <article class="post">
   <header class="post-head">
     <h1 class="post-title">{{ .Title }}</h1>
@@ -15,15 +20,23 @@
     </div>
   </header>
 
-  {{ if gt (len .Fragments.HeadingsMap) 0 }}
-  <details class="toc">
+  {{- if $hasToc }}
+  <details class="toc toc-inline">
     <summary>目录</summary>
-    {{ .TableOfContents }}
+    <nav aria-label="目录">{{ partial "toc-tree.html" $toc }}</nav>
   </details>
-  {{ end }}
+  {{- end }}
 
-  <div class="prose">
-    {{ .Content }}
+  <div class="post-body">
+    <div class="prose">
+      {{ .Content }}
+    </div>
+    {{- if $hasToc }}
+    <aside class="toc-side" aria-label="目录">
+      <p class="toc-side-title">目录</p>
+      <nav>{{ partial "toc-tree.html" $toc }}</nav>
+    </aside>
+    {{- end }}
   </div>
 
   <nav class="post-nav" aria-label="文章导航">

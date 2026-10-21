@@ -1,0 +1,19 @@
+/* 霞鹜文楷（LXGW WenKai, OFL）屏幕版
+   自托管、按 GB2312 常用字集切子集（7006 字），单文件约 1.5MB。
+   源文件：@fontsource/lxgw-wenkai，用 fontTools 在此仓库外切片。 */
+
+@font-face {
+  font-family: 'LXGW WenKai';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/lxgw-wenkai-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'LXGW WenKai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lxgw-wenkai-700.woff2') format('woff2');
+}

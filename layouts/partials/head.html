@@ -18,6 +18,9 @@
 <link rel="alternate" type="application/rss+xml" href="{{ "/index.xml" | absURL }}" title="{{ site.Title }}">
 <link rel="icon" href="{{ "/favicon.svg" | relURL }}" type="image/svg+xml">
 
+{{- $fonts := resources.Get "css/fonts.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $fonts.RelPermalink }}" integrity="{{ $fonts.Data.Integrity }}">
+
 {{- $css := resources.Get "css/kami.css" | minify | fingerprint }}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
 

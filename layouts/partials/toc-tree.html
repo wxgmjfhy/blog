@@ -1,0 +1,10 @@
+{{- with . }}
+<ul class="toc-list">
+  {{- range . }}
+  <li>
+    <a href="#{{ .ID }}">{{ .Title }}</a>
+    {{- with .Headings }}{{ partial "toc-tree.html" . }}{{ end }}
+  </li>
+  {{- end }}
+</ul>
+{{- end }}

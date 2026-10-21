@@ -104,8 +104,16 @@ export CLOUDFLARE_ACCOUNT_ID="$(cat ~/.cf-account)"
 - 代码块深色底 + 圆点标题栏 + 复制按钮
 - 支持深浅色切换（默认浅色，跟随手动选择，存 localStorage）
 
-字体说明：tw93 原版用商业字体 TsangerJinKai02，不能随站分发，因此退回系统楷体。
-macOS 上是 STKaiti、Windows 上是 KaiTi、Linux/Android 会退到宋体或黑体。
-若想让各平台完全一致，需要自托管开源楷体（如 LXGW 霞鹜文楷）并按 unicode-range
-切片——注意 npm 上的 `lxgw-wenkai-*-webfont` 包实测存在子集与 CSS 声明不匹配的问题，
-届时建议改用其它分发渠道再验证。
+字体：正文使用自托管的**霞鹜文楷**（LXGW WenKai, OFL）。用 fontTools 从
+`@fontsource/lxgw-wenkai` 的完整字体中切出 GB2312 常用字集（7006 字），两个字重
+（400/700），每个约 1.5MB，放在 `static/fonts/`，不依赖任何 CDN。
+缺字时依次退回 `TsangerJinKai02 → STKaiti → KaiTi → 宋体`。
+
+重新生成子集（换字重或扩充字集时）：
+
+```bash
+npm pack @fontsource/lxgw-wenkai && tar -xzf lxgw-wenkai-*.tgz
+python3 -m fontTools.subset package/files/lxgw-wenkai-latin-500-normal.woff2 \
+  --unicodes-file=charset.txt --flavor=woff2 --layout-features='' \
+  --output-file=static/fonts/lxgw-wenkai-500.woff2
+```

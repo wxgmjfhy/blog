@@ -29,15 +29,17 @@ token 没法提前算；不同请求之间没有这种依赖，所以可以拼�
 
 > 首先是我对深度学习的粗糙理解：我们其实就是在模拟一个高维函数，只要维度足够高、函数足够复杂，它就能够模拟真实世界的规律。深度学习要做的事情，就是让机器想办法模拟这个函数。
 
-Qwen3-0.6B 有 N = 28 层 decoder block，每一层主要包括：
+Qwen3-0.6B 有 $N = 28$ 层 decoder block，每一层主要包括：
 1. Norm
 2. Attention
 3. Norm
 4. MLP / FFN
 
 教科书级别的 pre-norm 可以如下表示：
-> x = x + Attn(Norm(x))  
-> x = x + MLP(Norm(x))  
+$$
+x = x + \mathrm{Attn}(\mathrm{Norm}(x)) \\
+x = x + \mathrm{MLP}(\mathrm{Norm}(x))
+$$
 
 这里面的计算有 Norm，加法，Attn 和 MLP，而在 nano-vllm 中，为了减少 GPU 计算时搬用数据的消耗，采取了算子融合的手段：将加残差推迟到下一次的 Norm 中去做。
 
@@ -47,7 +49,7 @@ Qwen3-0.6B 有 N = 28 层 decoder block，每一层主要包括：
 - 在残差连接出现之前，x 经过多层的变化后，会丢失 / 扭曲原本的信息，层数加深后误差反而增大
 - 有了残差，x 经过一层可以什么都没学到，深度得以利用
 
-接着便是 **Attention**，transformer 的核心，x 经过 W_Q，W_K，W_V 三个权重矩阵变成：
+接着便是 **Attention**，transformer 的核心，$x$ 经过 $W_Q$，$W_K$，$W_V$ 三个权重矩阵变成：
 - Q：我在找什么
 - K：我是什么
 - V：我能提供什么
@@ -55,12 +57,12 @@ Qwen3-0.6B 有 N = 28 层 decoder block，每一层主要包括：
 Q 和 K 比较相似度，“找到” V，进行加权求和。
 
 Attention 更具体来讲，依次是：
-1. `Q = x W_Q，K = x W_K，V = x W_V`
+1. $Q = xW_Q$，$K = xW_K$，$V = xW_V$
 2. `reshape 成 heads`
 3. `RoPE(Q, K, position)` 位置编码，获得 token 之间的位置关系信息
-4. `score = Q K^T / √d` 计算相似度
-5. `causal mask + softmax` 遮住（mask）未来，并经过 softmax 变为权重
-6. `× V` 加权求和
+4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
+5. $\\mathrm{causal\\ mask} + \\mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
+6. $\times V$ 加权求和
 
 最后介绍 **MLP / FNN** —— Attention 更像是**从上下文中取信息**（在 token 之间，找出关联，丰富信息，得到融合了上下文信息的 token 表示）；而 MLP / FFN 更像是**在同一个 token 的特征之间做变换，对信息进行非线性加工和存储知识**：
 - 一个 token 的特征之间做变换：MLP 通过升维操作，在输入的特征重新（线性）组合成新的特征
@@ -86,30 +88,31 @@ Attention 更具体来讲，依次是：
 | `tie_word_embeddings` | Embedding 和 LM Head 是否共用一张表 | true |
 
 注意：
-- head_dim = 128 是配置给出的
-- 不能这样计算：head_dim = hidden_size / num_attention_heads = 1024 / 16 = 64
+- $\mathrm{head\_dim} = 128$ 是配置给出的
+- 不能这样计算：$\mathrm{head\_dim} = \mathrm{hidden\_size} / \mathrm{num\_attention\_heads} = 1024/16 = 64$
 
 因此：
 
-> Q 投影输出宽度 = num_attention_heads × head_dim = 16 × 128 = 2048  
-> K/V 投影输出宽度 = num_key_value_heads × head_dim = 8 × 128 = 1024  
-> GQA 共用比 = 16 / 8 = 2    （每 2 个 Q 头共用 1 组 K/V）  
-> softmax 缩放 = 1 / √head_dim = 1 / √128 ≈ 0.0884  
+| 量 | 计算 | 结果 |
+|---|---|---|
+| Q 投影输出宽度 | $\mathrm{num\_attention\_heads} \times \mathrm{head\_dim} = 16 \times 128$ | $2048$ |
+| K/V 投影输出宽度 | $\mathrm{num\_key\_value\_heads} \times \mathrm{head\_dim} = 8 \times 128$ | $1024$ |
+| GQA 共用比 | $16 / 8$ | $2$（每 2 个 Q 头共用 1 组 K/V） |
+| softmax 缩放 | $1 / \sqrt{\mathrm{head\_dim}} = 1 / \sqrt{128}$ | $\approx 0.0884$ |
 
-残差流全程是 `[T, 1024]`，T 是本步送进模型的 token 数。Q 投影把每个位置扩到 2048 再拆成 16 个头，算完注意力再乘输出投影，回到 1024。
+残差流全程是 $[T, 1024]$，$T$ 是本步送进模型的 token 数。Q 投影把每个位置扩到 2048 再拆成 16 个头，算完注意力再乘输出投影，回到 1024。
 
-一次前向里和形状有关的矩阵乘（写成 `[T, in] @ [in, out]`）：
+一次前向里和形状有关的矩阵乘（写成 $[T, \text{in}] \;@\; [\text{in}, \text{out}]$）：
 
-> Embedding 查表          vocab × hidden     = 151936 × 1024  
->
-> Q                       [T, 1024] @ [1024, 2048] → [T, 16, 128]  
-> K / V                   [T, 1024] @ [1024, 1024] → [T, 8, 128]  
-> O（注意力输出投影）     [T, 2048] @ [2048, 1024] → [T, 1024]  
->
-> SwiGLU 的 gate+up       [T, 1024] @ [1024, 6144] → 劈成两半各 3072  
-> SwiGLU 的 down          [T, 3072] @ [3072, 1024] → [T, 1024]  
->
-> LM Head（只取最后位置） [1024] @ [1024, 151936] → 151936 维 logits  
+| 算子 | 形状变化 |
+|---|---|
+| Embedding 查表 | $\text{vocab} \times \text{hidden} = 151936 \times 1024$ |
+| Q | $[T, 1024] \;@\; [1024, 2048] \to [T, 16, 128]$ |
+| K / V | $[T, 1024] \;@\; [1024, 1024] \to [T, 8, 128]$ |
+| O（注意力输出投影） | $[T, 2048] \;@\; [2048, 1024] \to [T, 1024]$ |
+| SwiGLU 的 gate+up | $[T, 1024] \;@\; [1024, 6144]$ → 劈成两半各 3072 |
+| SwiGLU 的 down | $[T, 3072] \;@\; [3072, 1024] \to [T, 1024]$ |
+| LM Head（只取最后位置） | $[1024] \;@\; [1024, 151936] \to 151936$ 维 logits |
 
 ## 二、GPU
 
@@ -160,7 +163,7 @@ Overhead 也是不可忽视的一部分：Python 和框架需要决定如何调�
 
 ### Prefill & Decode
 
-自回归如果每步都把已经生成的整段再算一遍，第 t 步的注意力会重复做前 t-1 步已经做过的 K、V。K 和 V 只依赖已经存在的 token，不依赖未来，所以可以存下来，这份缓存就是 **KV Cache**。
+自回归如果每步都把已经生成的整段再算一遍，第 $t$ 步的注意力会重复做前 $t-1$ 步已经做过的 K、V。K 和 V 只依赖已经存在的 token，不依赖未来，所以可以存下来，这份缓存就是 **KV Cache**。
 
 于是一次请求裂成两段。
 - **Prefill**：把整段 prompt 一次送进去。每个 prompt token 都算出 K、V 并写入缓存。注意力在这些 token 之间按因果掩码做完。最后只在最后一个位置采样，得到第一个新 token。prompt 足够长时，这里的矩阵乘很大，往往偏**计算**。
@@ -175,11 +178,11 @@ Overhead 也是不可忽视的一部分：Python 和框架需要决定如何调�
 如何计算 KV 需要多大？每一个 token 需要：
 1. 需要同时存 K 和 V，那么需要乘以 2
 2. 每一层 decoder block 都有自己的 KV，因此乘以 num_hidden_layers，此处是 28 层
-3. 一个 K / V 有多大？num_kv_heads × head_dim = 8 * 128 = 1024
+3. 一个 K / V 有多大？$\mathrm{num\_kv\_heads} \times \mathrm{head\_dim} = 8 \times 128 = 1024$
 4. Qwen3-0.6B 使用的精度是 bf16（2 bytes），因此再乘以 dtype_bytes = 2
 5. （如果考虑张量并行，如果将 KV 头分到多卡上，计算可以除以卡数）
 
-因此，一个 token 需要存储 2 * 28 * 1024 * 2 = 114688 byte，大约 112 KiB 每个 token。max_model_len = 4096 时，一条序列的 KV 上界大约 448 MiB。模型自己写着 max_position_embeddings = 40960，若按这个长度预留，一条就大约 4.4 GiB。nano-vllm 会把 max_model_len 截到配置和模型上限的较小值，默认 4096。
+因此，一个 token 需要存储 $2 \times 28 \times 1024 \times 2 = 114688$ byte，大约 112 KiB 每个 token。$\mathrm{max\_model\_len} = 4096$ 时，一条序列的 KV 上界大约 448 MiB。模型自己写着 $\mathrm{max\_position\_embeddings} = 40960$，若按这个长度预留，一条就大约 4.4 GiB。nano-vllm 会把 $\mathrm{max\_model\_len}$ 截到配置和模型上限的较小值，默认 4096。
 
 注意：
 - max_position_embeddings 指我们平时所说的模型上下文窗口大小，比如 Opus 支持 1M 上下文
@@ -189,72 +192,75 @@ Overhead 也是不可忽视的一部分：Python 和框架需要决定如何调�
 
 KV Cache 的存储是一个问题，因为其非常大，而且是变长的。如果给每条请求在显存里划一段连续空间，长度等于 max_model_len，短请求会留下用不上的大洞，新请求也塞不进去。这是外碎片，和操作系统里按进程预留整段物理内存是同一类问题。
 
-**PagedAttention** 采用 OS 经典分页思想：将 KV 切成固定大小的块，所有请求共享内存块池，序列通过块表映射到物理内存块。这样只有最后一块可能放不满，存在内存缝隙。但块的粒度越小，碎片就越小，内存浪费往往更少；不过，块变小也会增加“管理”的难度，会增加块表、寻址、分配等开销；就像算法竞赛中的分块算法，需要选择合适的块大小（一般是 √n）才能平衡时间复杂度。
+**PagedAttention** 采用 OS 经典分页思想：将 KV 切成固定大小的块，所有请求共享内存块池，序列通过块表映射到物理内存块。这样只有最后一块可能放不满，存在内存缝隙。但块的粒度越小，碎片就越小，内存浪费往往更少；不过，块变小也会增加“管理”的难度，会增加块表、寻址、分配等开销；就像算法竞赛中的分块算法，需要选择合适的块大小（一般是 $\sqrt{n}$）才能平衡时间复杂度。
 
 **前缀缓存 Prefix cache** 建立在同一套块上。把完整块里的 token 做成链式哈希：第 i 块的哈希吃进第 i-1 块的哈希和本块 token。新请求进来，从左往右找最长命中，命中的块加引用计数，不再算一遍。引用减到 0，块回到空闲池；真正不能再复用，是这块被重新分配给别人的那一刻，旧哈希被清掉。
 
 ### FlashAttention & Online Softmax
 
 回顾这三步：
-> 4. `score = Q K^T / √d` 计算相似度  
-> 5. `causal mask + softmax` 遮住（mask）未来，并经过 softmax 变为权重  
-> 6. `× V` 加权求和  
+> 4. $\mathrm{score} = QK^\top / \sqrt{d}$ 计算相似度
+> 5. $\\mathrm{causal\\ mask} + \\mathrm{softmax}$ 遮住（mask）未来，并经过 softmax 变为权重
+> 6. $\times V$ 加权求和
 
 在 GPU 上，朴素 Attention 需要做三次 HBM -> SRAM -> HBM 的搬运：
-1. 计算 `S = Q K^T / √d + Mask`
-2. 计算 `P = softmax(S)`
-3. 计算 `O = P * V`
+1. 计算 $S = QK^\top / \sqrt{d} + \mathrm{Mask}$
+2. 计算 $P = \mathrm{softmax}(S)$
+3. 计算 $O = PV$
 
 再次回顾 Attention 中的计算：
-- 记 T 是本步送进模型的 token 数
-- 记 d 是每个头的宽度（head_dim）
-> Q K V     [T, d]  
-> S P       [T, T]  
-> O         [T, d]  
+- 记 $T$ 是本步送进模型的 token 数
+- 记 $d$ 是每个头的宽度（head_dim）
+| 张量 | 形状 |
+|---|---|
+| $Q, K, V$ | $[T, d]$ |
+| $S, P$ | $[T, T]$ |
+| $O$ | $[T, d]$ |
 
-**S 和 P 都要在 HBM 上经过一次读和一次写，当 T >> d 时，搬运的时间复杂度是 4T²。**
+**$S$ 和 $P$ 都要在 HBM 上经过一次读和一次写，当 $T \gg d$ 时，搬运的时间复杂度是 $4T^2$。**
 
 **FlashAttention** 采取了分块的策略来减少搬运的消耗，核心思想：HBM 上不出现 S 和 P，块内采用 online / 流式 softmax 计算。
 
 什么是 online softmax？
-- softmax(xi) = e^(xi) / sum(e^(xj))，实现上防止 exp 溢出转为 softmax(xi) = e^(xi - max) / sum(e^(xj - max))
-- 理论上要有 max，就得先得到所有的 xi；但就像加法可以累加、乘法可以累乘，stdev、softmax 等一些运算可以构造有限维状态向量递推更新
+- $\mathrm{softmax}(x_i) = e^{x_i} / \sum_j e^{x_j}$，实现上防止 exp 溢出转为 $\mathrm{softmax}(x_i) = e^{x_i - \max} / \sum_j e^{x_j - \max}$
+- 理论上要有 max，就得先得到所有的 $x_i$；但就像加法可以累加、乘法可以累乘，stdev、softmax 等一些运算可以构造有限维状态向量递推更新
 
-> 状态 S = (MAX, SUM), MAX = max(xi), SUM = sum(e^(xi - MAX))  
+> 状态 $(\mathrm{MAX}, \mathrm{SUM})$，其中 $\mathrm{MAX} = \max_i x_i$，$\mathrm{SUM} = \sum_i e^{x_i - \mathrm{MAX}}$
 >
-> 新来样本 xj  
+> 新来样本 $x_j$
 >
-> 1. xj > MAX：MAX = xj, SUM = sum(e^(xi - xj))  
-> 2. 否则：SUM = SUM + e^(xj - MAX)  
+> 1. $x_j > \mathrm{MAX}$：$\mathrm{MAX} = x_j$，$\mathrm{SUM} = \sum_i e^{x_i - x_j}$
+> 2. 否则：$\mathrm{SUM} = \mathrm{SUM} + e^{x_j - \mathrm{MAX}}$
 >
-> Attention 还需要乘以 V，那么再维护一个 a = sum(e^(xi - MAX) * vi) 即可  
+> Attention 还需要乘以 $V$，那么再维护一个 $a = \sum_i e^{x_i - \mathrm{MAX}} \cdot v_i$ 即可
 
 分块后的复杂度计算：
-> Q 按行切成块长 Br，K V 按行切成块长 Bc  
->
-> Qi              [Br, d]  
-> Kj Vj           [Bc, d]  
-> Sij = Qi Kj^T   [Br, Bc]  
->
-> 那么 SRAM 的内存 M >= Br*d + 2*Bc*d + Br*Bc  
->
-> Br, Bc 也往往由 M 决定，取 Br = Θ(min(d, M/d)), Bc = Θ(M/d)  
->
-> T/Br 个 Qi 需要和全部 Kj Vj 都过一遍，计算搬运量：  
->
-> - Q 读 1 次 T*d  
-> - O 写 1 次 T*d  
-> - K V 读 T/Br 次 2*T/Br*T*d = (2T² d)/Br  
->
-> 因此，复杂度为 2Td + (2T² d)/Br，代入 Br = Θ(min(d, M/d)) 后为 2Td + (2T² d²)/M  
+$Q$ 按行切成块长 $B_r$，$K$、$V$ 按行切成块长 $B_c$：
 
-通常情况下，Θ(T²) >> Θ(Td + (T² d²)/M)，FlashAttention 显著降低了搬运量。
+| 张量 | 形状 |
+|---|---|
+| $Q_i$ | $[B_r, d]$ |
+| $K_j, V_j$ | $[B_c, d]$ |
+| $S_{ij} = Q_i K_j^\top$ | $[B_r, B_c]$ |
+
+那么 SRAM 的内存 $M \ge B_r d + 2 B_c d + B_r B_c$。
+
+$B_r$、$B_c$ 也往往由 $M$ 决定，取 $B_r = \Theta(\min(d, M/d))$，$B_c = \Theta(M/d)$。
+
+$T/B_r$ 个 $Q_i$ 需要和全部 $K_j$、$V_j$ 都过一遍，计算搬运量：
+- $Q$ 读 1 次，共 $Td$
+- $O$ 写 1 次，共 $Td$
+- $K$、$V$ 读 $T/B_r$ 次，共 $2 \cdot (T/B_r) \cdot T d = \frac{2T^2 d}{B_r}$
+
+因此，复杂度为 $2Td + \frac{2T^2 d}{B_r}$，代入 $B_r = \Theta(\min(d, M/d))$ 后为 $2Td + \frac{2T^2 d^2}{M}$
+
+通常情况下，$\Theta(T^2) \gg \Theta(Td + T^2 d^2 / M)$，FlashAttention 显著降低了搬运量。
 
 ### Continuous Batching & Chunked Prefill
 
 要理解 Continuous Batching，我们先来看传统静态 batching：攒够一批请求，推理完这一批再接下一批。
 
-> batch = [req_1, req_2, req_3]  
+> $[\mathrm{req}_1, \mathrm{req}_2, \mathrm{req}_3]$  
 >
 > step 1: 1, 2, 3 同时生成第 1 个 token  
 > step 2: 1, 2, 3 同时生成第 2 个 token  
@@ -277,7 +283,7 @@ Continuous Batching 仍然有 batch，不过是这么做的：
     - Chunked Prefill：将长 prompt 的 Prefill 拆分为多个 chunk
 
 再具体一些，nano-vllm 中 Prefill 和 Decode 的 batch 是不同的：
-1. Prefill：将多个请求序列拼成一个序列，并记录前缀和（例如，一条 5 token，一条 3 token，拼成 [t0...t7]，前缀和为 [0, 5, 8]），然后调用 varlen FlashAttention（flash_attn_varlen_func），这是一个写好的 kernel，根据前缀和区分不同请求序列
+1. Prefill：将多个请求序列拼成一个序列，并记录前缀和（例如，一条 5 token，一条 3 token，拼成 $[t_0 \dots t_7]$，前缀和为 $[0, 5, 8]$），然后调用 varlen FlashAttention（flash_attn_varlen_func），这是一个写好的 kernel，根据前缀和区分不同请求序列
 2. Decode：每个请求序列输入长度均为 1，不需要前缀和，需要序列的 block table 去加载 KV Cache，调用 flash_attn_with_kvcache 这个 kernel
 
 ## 四、PyTorch & CUDA / Triton
